@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 720" width="980" height="720" role="img" aria-label="Inventory database ER diagram with owns relationships">
+  <style>
+    .bg { fill: #ffffff; }
+    .title { font: 700 20px "Segoe UI", sans-serif; fill: #111111; }
+    .sub { font: 400 12px "Segoe UI", sans-serif; fill: #6b7280; }
+    .section { font: 700 13px "Segoe UI", sans-serif; fill: #111111; }
+    .head { fill: #111111; }
+    .head-text { font: 700 14px "Segoe UI", sans-serif; fill: #ffffff; }
+    .box { fill: #ffffff; stroke: #d5dbde; stroke-width: 1.5; }
+    .simple { fill: #f4f6f7; stroke: #111111; stroke-width: 1.6; }
+    .simple-text { font: 700 16px "Segoe UI", sans-serif; fill: #111111; }
+    .row { font: 400 12px "Consolas", "Segoe UI", monospace; fill: #111111; }
+    .pk { fill: #00798a; font-weight: 700; }
+    .fk { fill: #9a6400; }
+    .line { stroke: #111111; stroke-width: 1.8; fill: none; }
+    .owns { stroke: #00b7cd; stroke-width: 2.2; fill: none; }
+    .owns-text { font: 700 13px "Segoe UI", sans-serif; fill: #00798a; }
+    .label { font: 600 11px "Segoe UI", sans-serif; fill: #6b7280; }
+    .note { font: 400 11px "Segoe UI", sans-serif; fill: #6b7280; }
+    .key { font: 600 11px "Segoe UI", sans-serif; fill: #6b7280; }
+    .pill { fill: #e7f8fb; stroke: #00b7cd; stroke-width: 1; }
+    .pill-text { font: 700 12px "Segoe UI", sans-serif; fill: #00798a; }
+  </style>
+
+  <rect class="bg" width="980" height="720"/>
+  <text class="title" x="40" y="36">Inventory Manager — ER diagram</text>
+  <text class="sub" x="40" y="56">Ownership is user-to-category and user-to-product</text>
+  <text class="key" x="700" y="36">PK = primary key</text>
+  <text class="key" x="700" y="54">FK = foreign key · UK = unique</text>
+
+  <text class="section" x="40" y="88">1. Ownership</text>
+
+  <rect class="simple" x="80" y="108" width="160" height="56" rx="10"/>
+  <text class="simple-text" x="160" y="143" text-anchor="middle">users</text>
+
+  <rect class="simple" x="410" y="108" width="160" height="56" rx="10"/>
+  <text class="simple-text" x="490" y="143" text-anchor="middle">categories</text>
+
+  <rect class="simple" x="740" y="108" width="160" height="56" rx="10"/>
+  <text class="simple-text" x="820" y="143" text-anchor="middle">products</text>
+
+  <!-- users owns categories -->
+  <path class="owns" d="M240 136 H410"/>
+  <circle cx="240" cy="136" r="4" fill="#00b7cd"/>
+  <path d="M396 128 L410 136 L396 144" fill="none" stroke="#00b7cd" stroke-width="2.2"/>
+  <path d="M390 128 L404 136 L390 144" fill="none" stroke="#00b7cd" stroke-width="2.2"/>
+  <rect class="pill" x="286" y="116" width="78" height="22" rx="11"/>
+  <text class="pill-text" x="325" y="131" text-anchor="middle">owns 1:N</text>
+
+  <!-- users owns products -->
+  <path class="owns" d="M160 164 V198 H820 V164"/>
+  <circle cx="160" cy="164" r="4" fill="#00b7cd"/>
+  <path d="M812 150 L820 164 L828 150" fill="none" stroke="#00b7cd" stroke-width="2.2"/>
+  <path d="M812 144 L820 158 L828 144" fill="none" stroke="#00b7cd" stroke-width="2.2"/>
+  <rect class="pill" x="448" y="186" width="84" height="22" rx="11"/>
+  <text class="pill-text" x="490" y="201" text-anchor="middle">owns 1:N</text>
+
+  <!-- categories contains products -->
+  <path class="line" d="M570 136 H740"/>
+  <circle cx="570" cy="136" r="4" fill="#111111"/>
+  <path d="M726 128 L740 136 L726 144" fill="none" stroke="#111111" stroke-width="1.8"/>
+  <path d="M720 128 L734 136 L720 144" fill="none" stroke="#111111" stroke-width="1.8"/>
+  <rect x="612" y="116" width="96" height="22" rx="11" fill="#f4f6f7" stroke="#111111"/>
+  <text class="label" x="660" y="131" text-anchor="middle" fill="#111111">contains 1:N</text>
+
+  <text class="section" x="40" y="246">2. Tables and columns</text>
+
+  <!-- users -->
+  <g transform="translate(40,266)">
+    <rect class="box" width="250" height="250" rx="8"/>
+    <rect class="head" width="250" height="36" rx="8"/>
+    <rect class="head" y="18" width="250" height="18"/>
+    <text class="head-text" x="16" y="24">users</text>
+    <text class="row pk" x="16" y="62">id uuid PK</text>
+    <text class="row" x="16" y="86">name varchar</text>
+    <text class="row" x="16" y="110">email varchar UK</text>
+    <text class="row" x="16" y="134">password varchar</text>
+    <text class="row" x="16" y="158">role varchar</text>
+    <text class="row" x="16" y="182">createdAt timestamptz</text>
+    <text class="row" x="16" y="206">updatedAt timestamptz</text>
+    <text class="note" x="16" y="236">role: owner | user</text>
+  </g>
+
+  <!-- categories -->
+  <g transform="translate(365,266)">
+    <rect class="box" width="250" height="226" rx="8"/>
+    <rect class="head" width="250" height="36" rx="8"/>
+    <rect class="head" y="18" width="250" height="18"/>
+    <text class="head-text" x="16" y="24">categories</text>
+    <text class="row pk" x="16" y="62">id uuid PK</text>
+    <text class="row" x="16" y="86">name varchar</text>
+    <text class="row" x="16" y="110">description text</text>
+    <text class="row fk" x="16" y="134">userId uuid FK  (owns)</text>
+    <text class="row" x="16" y="158">createdAt timestamptz</text>
+    <text class="row" x="16" y="182">updatedAt timestamptz</text>
+    <text class="note" x="16" y="212">owned by one user</text>
+  </g>
+
+  <!-- products -->
+  <g transform="translate(690,256)">
+    <rect class="box" width="250" height="430" rx="8"/>
+    <rect class="head" width="250" height="36" rx="8"/>
+    <rect class="head" y="18" width="250" height="18"/>
+    <text class="head-text" x="16" y="24">products</text>
+    <text class="row pk" x="16" y="62">id uuid PK</text>
+    <text class="row" x="16" y="86">name varchar</text>
+    <text class="row" x="16" y="110">sku varchar UK</text>
+    <text class="row" x="16" y="134">description text</text>
+    <text class="row" x="16" y="158">quantity int</text>
+    <text class="row" x="16" y="182">unitPrice decimal(10,2)</text>
+    <text class="row" x="16" y="206">supplierName varchar</text>
+    <text class="row" x="16" y="230">status varchar</text>
+    <text class="row" x="16" y="254">imageUrl varchar</text>
+    <text class="row fk" x="16" y="278">categoryId uuid FK</text>
+    <text class="row fk" x="16" y="302">userId uuid FK  (owns)</text>
+    <text class="row" x="16" y="326">createdAt timestamptz</text>
+    <text class="row" x="16" y="350">updatedAt timestamptz</text>
+    <text class="note" x="16" y="380">0 = Out of Stock</text>
+    <text class="note" x="16" y="396">1-10 = Low Stock</text>
+    <text class="note" x="16" y="412">11+ = In Stock</text>
+  </g>
+
+  <path class="owns" d="M290 366 H365"/>
+  <circle cx="290" cy="366" r="3.5" fill="#00b7cd"/>
+  <path d="M353 358 L365 366 L353 374" fill="none" stroke="#00b7cd" stroke-width="2"/>
+  <path d="M348 358 L360 366 L348 374" fill="none" stroke="#00b7cd" stroke-width="2"/>
+  <text class="owns-text" x="296" y="356">owns</text>
+
+  <path class="owns" d="M165 516 V600 H690"/>
+  <circle cx="165" cy="516" r="3.5" fill="#00b7cd"/>
+  <path d="M678 592 L690 600 L678 608" fill="none" stroke="#00b7cd" stroke-width="2"/>
+  <path d="M673 592 L685 600 L673 608" fill="none" stroke="#00b7cd" stroke-width="2"/>
+  <text class="owns-text" x="300" y="618">owns (userId)</text>
+
+  <path class="line" d="M615 366 H655 V534 H690"/>
+  <circle cx="615" cy="366" r="3.5" fill="#111111"/>
+  <path d="M678 526 L690 534 L678 542" fill="none" stroke="#111111" stroke-width="1.6"/>
+  <path d="M673 526 L685 534 L673 542" fill="none" stroke="#111111" stroke-width="1.6"/>
+  <text class="label" x="500" y="356">contains · RESTRICT</text>
+</svg>

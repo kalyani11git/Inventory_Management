@@ -1,0 +1,855 @@
+openapi: 3.0.3
+info:
+  title: Inventory Manager API
+  version: "1.0"
+  description: |
+    REST API for the Inventory Management System.
+
+    **How to try endpoints**
+    1. Register or login under **auth**.
+    2. Copy `accessToken` from the response.
+    3. Click **Authorize**, paste the token, then Close.
+    4. Protected routes send `Authorization: Bearer <token>`.
+
+    **Roles**
+    - `owner` — user management and owner dashboard (no product/category writes).
+    - `user` — own products, categories, stock, and inventory dashboard.
+    - The first registered account becomes `owner`.
+servers:
+  - url: http://localhost:5000/api
+    description: Local API
+tags:
+  - name: auth
+    description: Register, login, current session
+  - name: users
+    description: Owner-only account list and role changes
+  - name: categories
+    description: User-owned categories
+  - name: products
+    description: User-owned products, stock, and images
+  - name: dashboard
+    description: Role-specific overview stats
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register
+      description: Creates an account. The first user is promoted to owner; later users get the user role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDto"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+        "409":
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginDto"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponseDto"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Current user
+      security:
+        - JWT: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponseDto"
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      description: Client should still delete the stored JWT.
+      security:
+        - JWT: []
+      responses:
+        "201":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponseDto"
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+  /users:
+    get:
+      tags: [users]
+      summary: List users
+      description: Owner only.
+      security:
+        - JWT: []
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserPublicDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OwnerOnly"
+  /users/{id}/role:
+    patch:
+      tags: [users]
+      summary: Change user role
+      description: Cannot demote the last owner or remove your own owner role.
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleDto"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublicDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/OwnerOnly"
+  /categories:
+    get:
+      tags: [categories]
+      summary: List my categories
+      security:
+        - JWT: []
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+    post:
+      tags: [categories]
+      summary: Create category
+      security:
+        - JWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCategoryDto"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+  /categories/{id}:
+    get:
+      tags: [categories]
+      summary: Get category
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [categories]
+      summary: Update category
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCategoryDto"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+    delete:
+      tags: [categories]
+      summary: Delete category
+      description: Blocked if products are still assigned to it.
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponseDto"
+        "400":
+          description: Category still has products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+  /products:
+    get:
+      tags: [products]
+      summary: List products
+      description: Search, filter, sort and paginate. Users see only their own.
+      security:
+        - JWT: []
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name or SKU
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/ProductStatus"
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [name, quantity, unitPrice, createdAt]
+            default: createdAt
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+      responses:
+        "200":
+          description: Product page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [products]
+      summary: Create product
+      description: Status is set from quantity. SKU must be unique.
+      security:
+        - JWT: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductDto"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+        "409":
+          description: SKU must be unique
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+  /products/{id}:
+    get:
+      tags: [products]
+      summary: Get product
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [products]
+      summary: Update product
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductDto"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+    delete:
+      tags: [products]
+      summary: Delete product
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+  /products/{id}/stock:
+    patch:
+      tags: [products]
+      summary: Increase or decrease stock
+      description: Quantity cannot go below 0. Status updates automatically.
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustStockDto"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponseDto"
+        "400":
+          description: Stock cannot go below 0
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+  /products/{id}/image:
+    post:
+      tags: [products]
+      summary: Upload product image
+      description: JPG, PNG or WEBP. Max 2MB. Field name `file`.
+      security:
+        - JWT: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Image saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponseDto"
+        "400":
+          description: Invalid file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/UserOnly"
+  /dashboard/stats:
+    get:
+      tags: [dashboard]
+      summary: Dashboard stats
+      description: Users get inventory counts. Owners get user analytics (`userAnalytics`).
+      security:
+        - JWT: []
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStatsDto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Paste the accessToken from /auth/login or /auth/register
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponseDto"
+    OwnerOnly:
+      description: Owner role required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponseDto"
+    UserOnly:
+      description: User role required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponseDto"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponseDto"
+  schemas:
+    ProductStatus:
+      type: string
+      enum: [In Stock, Low Stock, Out of Stock]
+    UserRole:
+      type: string
+      enum: [owner, user]
+    RegisterDto:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          example: Kalyani
+        email:
+          type: string
+          format: email
+          example: kalyani@example.com
+        password:
+          type: string
+          minLength: 6
+          example: secret1
+    LoginDto:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: kalyani@example.com
+        password:
+          type: string
+          example: secret1
+    UserPublicDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Kalyani Mali
+        email:
+          type: string
+          example: kalyani@example.com
+        role:
+          $ref: "#/components/schemas/UserRole"
+        createdAt:
+          type: string
+          format: date-time
+    AuthResponseDto:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: "#/components/schemas/UserPublicDto"
+    MeResponseDto:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserPublicDto"
+    MessageResponseDto:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out
+    UpdateRoleDto:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/UserRole"
+    CreateCategoryDto:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Electronics
+        description:
+          type: string
+          example: Phones and accessories
+    UpdateCategoryDto:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    CategoryResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Electronics
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreateProductDto:
+      type: object
+      required: [name, sku, categoryId, quantity, unitPrice]
+      properties:
+        name:
+          type: string
+          example: USB Cable
+        sku:
+          type: string
+          example: USB-001
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+          example: 1 meter cable
+        quantity:
+          type: number
+          example: 25
+          minimum: 0
+        unitPrice:
+          type: number
+          example: 149.5
+          minimum: 0.01
+        supplierName:
+          type: string
+          example: ABC Traders
+    UpdateProductDto:
+      type: object
+      properties:
+        name:
+          type: string
+        sku:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        supplierName:
+          type: string
+    AdjustStockDto:
+      type: object
+      required: [type, quantity]
+      properties:
+        type:
+          type: string
+          enum: [increase, decrease]
+        quantity:
+          type: integer
+          minimum: 1
+          example: 5
+    ProductResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: USB Cable
+        sku:
+          type: string
+          example: USB-001
+        description:
+          type: string
+          nullable: true
+        quantity:
+          type: integer
+          example: 25
+        unitPrice:
+          type: number
+          example: 149.5
+        supplierName:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ProductStatus"
+        imageUrl:
+          type: string
+          nullable: true
+        categoryId:
+          type: string
+          format: uuid
+        category:
+          $ref: "#/components/schemas/CategoryResponseDto"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProductListResponseDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductResponseDto"
+        total:
+          type: integer
+          example: 12
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 2
+    UserAccountStatsDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        createdAt:
+          type: string
+          format: date-time
+        productCount:
+          type: integer
+        categoryCount:
+          type: integer
+        stockQuantity:
+          type: integer
+    UserAnalyticsDto:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+          example: 4
+        owners:
+          type: integer
+          example: 1
+        members:
+          type: integer
+          example: 3
+        joinedThisWeek:
+          type: integer
+        joinedThisMonth:
+          type: integer
+        withInventory:
+          type: integer
+        withoutInventory:
+          type: integer
+        avgProductsPerUser:
+          type: number
+          example: 3.5
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserAccountStatsDto"
+    DashboardStatsDto:
+      type: object
+      properties:
+        totalProducts:
+          type: integer
+          example: 12
+        totalCategories:
+          type: integer
+          example: 3
+        totalStockQuantity:
+          type: integer
+          example: 340
+        lowStockItems:
+          type: integer
+          example: 2
+        outOfStockItems:
+          type: integer
+          example: 1
+        userAnalytics:
+          allOf:
+            - $ref: "#/components/schemas/UserAnalyticsDto"
+          nullable: true
+    ErrorResponseDto:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          example: SKU must be unique
+        error:
+          type: string
+          example: Bad Request
